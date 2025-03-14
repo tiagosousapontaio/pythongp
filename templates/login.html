@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MovieRater</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="nav nav-tabs mb-4" id="authTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#login">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#register">Create Account</a>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content">
+                            <!-- Login Form -->
+                            <div class="tab-pane fade show active" id="login">
+                                <div id="loginError" class="alert alert-danger d-none"></div>
+                                <form id="loginForm">
+                                    <div class="mb-3">
+                                        <label for="loginEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="loginEmail" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="loginPassword" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="loginPassword" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                                </form>
+                            </div>
+
+                            <!-- Register Form -->
+                            <div class="tab-pane fade" id="register">
+                                <div id="registerError" class="alert alert-danger d-none"></div>
+                                <form id="registerForm">
+                                    <div class="mb-3">
+                                        <label for="registerEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="registerEmail" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="registerPassword" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="registerPassword" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid credentials');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('userEmail', email);
+                
+                // Redirect back to the previous page or home
+                const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+                window.location.href = returnUrl || '/';
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            try {
+                const response = await fetch('/users/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Failed to create account');
+                }
+
+                // Automatically log in after successful registration
+                const loginResponse = await fetch('/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error('Account created but login failed');
+                }
+
+                const loginData = await loginResponse.json();
+                localStorage.setItem('token', loginData.access_token);
+                localStorage.setItem('userEmail', email);
+
+                // Redirect back to the previous page or home
+                const returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+                window.location.href = returnUrl || '/';
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html> 

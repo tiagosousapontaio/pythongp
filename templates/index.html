@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieRater</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .movie-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        .filters {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            align-items: center;
+        }
+        .search-input {
+            flex-grow: 1;
+        }
+        .genre-select {
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">MovieRater</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Movies</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/your-movies">Your Movies</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="text-light me-3" id="userEmail"></span>
+                    <button class="btn btn-outline-light" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="filters">
+            <input type="search" class="form-control search-input" placeholder="Search movies...">
+            <select class="form-select genre-select" id="genreFilter">
+                <option>All Genres</option>
+            </select>
+        </div>
+
+        <div id="movieList" class="movie-grid"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
