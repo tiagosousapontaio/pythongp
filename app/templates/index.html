@@ -49,6 +49,22 @@
         .logout-btn {
             white-space: nowrap;
         }
+        .filters-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .form-select, .form-control {
+            border: 1px solid #dee2e6;
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -75,12 +91,30 @@
         </div>
     </nav>
 
-    <div class="container">
-        <div class="filters mb-4">
-            <input type="search" class="form-control" placeholder="Search movies...">
-            <select class="form-select" id="genreFilter">
-                <option>All Genres</option>
-            </select>
+    <div class="container mt-4">
+        <div class="filters-container">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="search" class="form-control" placeholder="Search movies...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="genreFilter">
+                        <option>All Genres</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="yearFilter">
+                        <option value="all">All Years</option>
+                        <option value="2020">2020s</option>
+                        <option value="2010">2010s</option>
+                        <option value="2000">2000s</option>
+                        <option value="1990">1990s</option>
+                        <option value="1980">1980s</option>
+                        <option value="1970">1970s</option>
+                        <option value="older">Older</option>
+                    </select>
+                </div>
+            </div>
         </div>
         <div class="movie-grid" id="movieList">
             <!-- Movies will be loaded here -->

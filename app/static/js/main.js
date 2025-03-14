@@ -10,18 +10,9 @@ let isLoggedIn = false;
 let currentUserEmail = null;
 
 // Fetch and display movies
-async function loadMovies(search = '', genre = 'All Genres') {
+async function loadMovies(search = '', genre = 'All Genres', yearFilter = 'all') {
     try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(
-            `/movies/?search=${encodeURIComponent(search)}&genre=${encodeURIComponent(genre)}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            }
-        );
-        
+        const response = await fetch(`/movies/?search=${encodeURIComponent(search)}&genre=${encodeURIComponent(genre)}&year=${encodeURIComponent(yearFilter)}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const movies = await response.json();
         displayMovies(movies);
@@ -232,27 +223,41 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Update event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Load movies when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.querySelector('input[type="search"]');
+    const genreFilter = document.getElementById('genreFilter');
+    const yearFilter = document.getElementById('yearFilter');
+
+    // Initial load
     loadMovies();
+    loadGenres();
 
-    // Handle search input
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(function() {
-            const genre = document.getElementById('genreSelect').value;
-            loadMovies(this.value, genre);
-        }, 300));
-    }
+    // Search input handler
+    searchInput?.addEventListener('input', debounce(() => {
+        loadMovies(
+            searchInput.value,
+            genreFilter.value,
+            yearFilter.value
+        );
+    }, 300));
 
-    // Handle genre selection
-    const genreSelect = document.getElementById('genreSelect');
-    if (genreSelect) {
-        genreSelect.addEventListener('change', function() {
-            const search = document.getElementById('searchInput').value;
-            loadMovies(search, this.value);
-        });
-    }
+    // Genre filter handler
+    genreFilter?.addEventListener('change', () => {
+        loadMovies(
+            searchInput?.value || '',
+            genreFilter.value,
+            yearFilter.value
+        );
+    });
+
+    // Year filter handler
+    yearFilter?.addEventListener('change', () => {
+        loadMovies(
+            searchInput?.value || '',
+            genreFilter.value,
+            yearFilter.value
+        );
+    });
 });
 
 async function loadUserDashboard() {

@@ -143,18 +143,32 @@ async def create_review(
 @app.get("/movies/", response_model=List[schemas.MovieResponse])
 async def get_movies(
     search: str = "", 
-    genre: str = "All Genres", 
+    genre: str = "All Genres",
+    year: str = "all",
     db: Session = Depends(get_db)
 ):
     query = db.query(models.Movie)
     
+    # Search filter
     if search:
         query = query.filter(models.Movie.title.ilike(f"%{search}%"))
+    
+    # Genre filter
     if genre and genre != "All Genres":
         query = query.join(models.Movie.genres).filter(models.Genre.name == genre)
     
-    movies = query.all()
+    # Year filter
+    if year and year != "all":
+        year_start = int(year) if year != "older" else 0
+        if year == "older":
+            query = query.filter(models.Movie.year < 1970)
+        else:
+            query = query.filter(
+                models.Movie.year >= year_start,
+                models.Movie.year < year_start + 10
+            )
     
+    movies = query.all()
     return [
         schemas.MovieResponse(
             id=movie.id,
@@ -443,4 +457,5 @@ async def get_your_movies(
 
 @app.get("/login")
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request}) 
+    return templates.TemplateResponse("login.html", {"request": request})
+
