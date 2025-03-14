@@ -193,4 +193,13 @@ class UserProfile(BaseModel):
     watchlist_count: Optional[int] = 0
 
     class Config:
+        from_attributes = True
+
+class UserWithStats(BaseModel):
+    id: int
+    email: str
+    created_at: datetime
+    review_count: int
+
+    class Config:
         from_attributes = True 

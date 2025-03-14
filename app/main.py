@@ -459,3 +459,28 @@ async def get_your_movies(
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/users", response_class=HTMLResponse)
+async def get_users_page(request: Request):
+    return templates.TemplateResponse("users.html", {"request": request})
+
+@app.get("/api/users", response_model=List[schemas.UserWithStats])
+async def get_users(db: Session = Depends(get_db)):
+    users = db.query(
+        models.User,
+        func.count(models.Review.id).label('review_count')
+    ).outerjoin(
+        models.Review
+    ).group_by(
+        models.User.id
+    ).all()
+    
+    return [
+        schemas.UserWithStats(
+            id=user.User.id,
+            email=user.User.email,
+            created_at=user.User.created_at,
+            review_count=user.review_count
+        )
+        for user in users
+    ]
+

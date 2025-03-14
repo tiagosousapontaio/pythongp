@@ -23,7 +23,8 @@ from .schemas import (
     WatchlistResponse,
     Genre,
     GenreBase,
-    GenreCreate
+    GenreCreate,
+    UserWithStats
 )
 
 __all__ = [
@@ -49,5 +50,6 @@ __all__ = [
     "WatchlistResponse",
     "Genre",
     "GenreBase",
-    "GenreCreate"
+    "GenreCreate",
+    "UserWithStats"
 ] 
