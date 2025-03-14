@@ -186,6 +186,7 @@ async function login() {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user_email');
+    localStorage.removeItem('username');
     location.reload();
 }
 
@@ -210,9 +211,24 @@ function updateAuthUI(isLoggedIn, email = null) {
 
 // Check auth status on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
     const token = localStorage.getItem('token');
-    updateAuthUI(!!token);
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    // Display user email
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+        document.getElementById('userEmail').textContent = userEmail;
+    }
+
+    // Load movies and genres
     loadMovies();
+    loadGenres();
+
+    updateAuthUI(!!token);
 });
 
 // Update event listeners
@@ -494,10 +510,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 localStorage.setItem('token', data.access_token);
                 localStorage.setItem('userEmail', email);
+                localStorage.setItem('username', email.split('@')[0]);
                 updateAuthUI(true, email);
                 const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 loginModal.hide();
-                window.location.reload();
+                window.location.href = '/movies';
             } else {
                 const errorDiv = document.getElementById('loginError');
                 errorDiv.textContent = 'Invalid email or password';
@@ -544,8 +561,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const loginData = await loginResponse.json();
                     localStorage.setItem('token', loginData.access_token);
                     localStorage.setItem('userEmail', email);
+                    localStorage.setItem('username', email.split('@')[0]);
                     updateAuthUI(true, email);
-                    window.location.reload();
+                    window.location.href = '/movies';
                 }
             } else {
                 console.error('Registration failed:', data);
@@ -592,6 +610,7 @@ async function handleLogin(event) {
         // Store token
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('userEmail', email);
+        localStorage.setItem('username', email.split('@')[0]);
 
         // Update UI
         const authButtons = document.getElementById('authButtons');
@@ -619,7 +638,7 @@ async function handleLogin(event) {
         }
 
         console.log('Login successful');
-        window.location.reload(); // Refresh the page to update the UI
+        window.location.href = '/movies'; // Refresh the page to update the UI
 
     } catch (error) {
         console.error('Login error:', error);
@@ -633,7 +652,8 @@ async function handleLogin(event) {
 function handleLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('userEmail');
-    window.location.reload();
+    localStorage.removeItem('username');
+    window.location.href = '/login';
 }
 
 // Check login status on page load
@@ -746,8 +766,9 @@ function handleLogout() {
     console.log('Logging out');
     localStorage.removeItem('token');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('username');
     updateAuthUI(false);
-    window.location.reload();
+    window.location.href = '/login';
 }
 
 // Add these functions if you haven't already
@@ -810,6 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
         localStorage.removeItem('token');
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('username');
         window.location.href = '/login';
     });
 });

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from app.data.sample_data import init_db
 from app.security.security import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -21,20 +21,16 @@ from app.security.utils import authenticate_user
 from pathlib import Path
 from app.models.models import Genre as GenreModel  # Add this import at the top
 from app.database.init_db import init_db, seed_data
+from app.database.database import SessionLocal
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-# Initialize database with sample data
-def init_db():
-    db = SessionLocal()
-    try:
-        seed_data(db)
-    finally:
-        db.close()
-
-# Initialize the database
+# Initialize database and seed data
 init_db()
+db = SessionLocal()
+seed_data(db)
+db.close()
 
 app = FastAPI(title="Movie Rating System")
 
@@ -47,12 +43,13 @@ templates = Jinja2Templates(directory="app/templates")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Frontend route
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/movies")
+async def movies_page(request: Request):
+    return RedirectResponse(url="/", status_code=303)
 
 # API routes
 @app.get("/api")
@@ -77,14 +74,22 @@ def create_genre(genre: schemas.GenreCreate, db: Session = Depends(get_db)):
 
 @app.post("/users/", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Check if user already exists
+    # Check if email exists
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create new user
+    # Check if username exists
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
     hashed_password = get_password_hash(user.password)
-    db_user = models.User(email=user.email, hashed_password=hashed_password)
+    db_user = models.User(
+        email=user.email,
+        username=user.username,
+        hashed_password=hashed_password
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -366,12 +371,26 @@ def get_movie_details(movie_id: int, db: Session = Depends(get_db)):
     }
 
 @app.get("/api/movies/{movie_id}/reviews", response_model=List[schemas.ReviewResponse])
-async def get_movie_reviews(movie_id: int, db: Session = Depends(get_db)):
-    reviews = db.query(models.Review).filter(models.Review.movie_id == movie_id).all()
-    # Add user email to each review
-    for review in reviews:
-        review.user_email = review.user.email
-    return reviews
+def get_movie_reviews(movie_id: int, db: Session = Depends(get_db)):
+    reviews = (
+        db.query(models.Review)
+        .join(models.User)  # Join with User table
+        .filter(models.Review.movie_id == movie_id)
+        .all()
+    )
+    
+    return [
+        {
+            "id": review.id,
+            "rating": review.rating,
+            "comment": review.comment,
+            "created_at": review.created_at,
+            "user_id": review.user_id,
+            "movie_id": review.movie_id,
+            "user_username": review.user.username
+        }
+        for review in reviews
+    ]
 
 @app.post("/api/movies/{movie_id}/reviews", response_model=schemas.ReviewResponse)
 def create_review(
@@ -380,10 +399,6 @@ def create_review(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Print debug information
-    print(f"Creating review for movie {movie_id} by user {current_user.id}")
-    print(f"Review data: {review}")
-
     db_review = models.Review(
         rating=review.rating,
         comment=review.comment,
@@ -391,15 +406,20 @@ def create_review(
         user_id=current_user.id
     )
     
-    try:
-        db.add(db_review)
-        db.commit()
-        db.refresh(db_review)
-        return db_review
-    except Exception as e:
-        print(f"Error creating review: {e}")
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+    db.add(db_review)
+    db.commit()
+    db.refresh(db_review)
+    
+    # Create response with username
+    return {
+        "id": db_review.id,
+        "rating": db_review.rating,
+        "comment": db_review.comment,
+        "created_at": db_review.created_at,
+        "user_id": db_review.user_id,
+        "movie_id": db_review.movie_id,
+        "user_username": current_user.username  # Add the username
+    }
 
 @app.get("/your-movies/list", response_model=List[schemas.MovieResponse])
 async def get_your_movies(

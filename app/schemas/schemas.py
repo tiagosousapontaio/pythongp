@@ -69,8 +69,14 @@ class Review(ReviewBase):
     class Config:
         from_attributes = True
 
-class ReviewResponse(Review):
-    user_email: Optional[str] = None
+class ReviewResponse(BaseModel):
+    id: int
+    rating: int
+    comment: str
+    created_at: datetime
+    user_id: int
+    movie_id: int
+    user_username: str
 
     class Config:
         from_attributes = True
@@ -91,7 +97,8 @@ class MovieWithReviews(MovieResponse):
 
 # User schemas last
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
+    username: str
 
 class UserCreate(UserBase):
     password: str
@@ -111,8 +118,8 @@ class UserProfile(UserBase):
     class Config:
         from_attributes = True
 
-class UserResponse(User):
-    reviews: List[ReviewResponse] = []
+class UserResponse(UserBase):
+    id: int
 
     class Config:
         from_attributes = True

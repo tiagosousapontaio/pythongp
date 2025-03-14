@@ -124,8 +124,13 @@ function displayReviews(reviews) {
         <div class="review-card mb-3">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Rating: ${'⭐'.repeat(review.rating)}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        By ${review.user_username} • Rating: ${'⭐'.repeat(review.rating)}
+                    </h6>
                     <p class="card-text">${review.comment}</p>
+                    <small class="text-muted">
+                        ${new Date(review.created_at).toLocaleDateString()}
+                    </small>
                 </div>
             </div>
         </div>
