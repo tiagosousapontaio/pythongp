@@ -12,10 +12,34 @@ let currentUserEmail = null;
 // Fetch and display movies
 async function loadMovies(search = '', genre = 'All Genres', yearFilter = 'all') {
     try {
-        const response = await fetch(`/movies/?search=${encodeURIComponent(search)}&genre=${encodeURIComponent(genre)}&year=${encodeURIComponent(yearFilter)}`);
+        // Create URL with all filter parameters
+        const params = new URLSearchParams({
+            search: search,
+            genre: genre,
+            year: yearFilter
+        });
+        
+        const response = await fetch(`/movies/?${params.toString()}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const movies = await response.json();
-        displayMovies(movies);
+        
+        const movieList = document.getElementById('movieList');
+        if (movies.length === 0) {
+            movieList.innerHTML = `
+                <div class="alert alert-info" role="alert">
+                    No movies found matching your filters.
+                </div>`;
+            return;
+        }
+
+        movieList.innerHTML = movies.map(movie => `
+            <div class="movie-card" onclick="window.location.href='/movie/${movie.id}'">
+                <h3>${movie.title}</h3>
+                <p>Director: ${movie.director}</p>
+                <p>Year: ${movie.year}</p>
+                <p>Genres: ${movie.genres.join(', ')}</p>
+            </div>
+        `).join('');
     } catch (error) {
         console.error('Error loading movies:', error);
         document.getElementById('movieList').innerHTML = 
@@ -232,32 +256,27 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMovies();
     loadGenres();
 
-    // Search input handler
-    searchInput?.addEventListener('input', debounce(() => {
-        loadMovies(
-            searchInput.value,
-            genreFilter.value,
-            yearFilter.value
-        );
-    }, 300));
+    // Function to apply all filters
+    const applyFilters = () => {
+        const searchTerm = searchInput?.value || '';
+        const selectedGenre = genreFilter?.value || 'All Genres';
+        const selectedYear = yearFilter?.value || 'all';
+        
+        loadMovies(searchTerm, selectedGenre, selectedYear);
+    };
+
+    // Search input handler with debounce
+    let searchTimeout;
+    searchInput?.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFilters, 300);
+    });
 
     // Genre filter handler
-    genreFilter?.addEventListener('change', () => {
-        loadMovies(
-            searchInput?.value || '',
-            genreFilter.value,
-            yearFilter.value
-        );
-    });
+    genreFilter?.addEventListener('change', applyFilters);
 
     // Year filter handler
-    yearFilter?.addEventListener('change', () => {
-        loadMovies(
-            searchInput?.value || '',
-            genreFilter.value,
-            yearFilter.value
-        );
-    });
+    yearFilter?.addEventListener('change', applyFilters);
 });
 
 async function loadUserDashboard() {

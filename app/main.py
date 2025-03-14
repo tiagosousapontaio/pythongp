@@ -149,24 +149,27 @@ async def get_movies(
 ):
     query = db.query(models.Movie)
     
-    # Search filter
+    # Apply search filter
     if search:
         query = query.filter(models.Movie.title.ilike(f"%{search}%"))
     
-    # Genre filter
+    # Apply genre filter
     if genre and genre != "All Genres":
         query = query.join(models.Movie.genres).filter(models.Genre.name == genre)
     
-    # Year filter
+    # Apply year filter
     if year and year != "all":
-        year_start = int(year) if year != "older" else 0
-        if year == "older":
-            query = query.filter(models.Movie.year < 1970)
-        else:
-            query = query.filter(
-                models.Movie.year >= year_start,
-                models.Movie.year < year_start + 10
-            )
+        try:
+            year_start = int(year)
+            if year == "older":
+                query = query.filter(models.Movie.year < 1970)
+            else:
+                query = query.filter(
+                    models.Movie.year >= year_start,
+                    models.Movie.year < year_start + 10
+                )
+        except ValueError:
+            pass  # Handle invalid year values gracefully
     
     movies = query.all()
     return [
