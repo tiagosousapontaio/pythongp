@@ -6,7 +6,7 @@ from app import schemas  # Make sure this import is correct
 from app.database import SessionLocal, engine, Base, get_db
 from app.dependencies import get_current_user
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, case
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -147,17 +147,34 @@ async def get_movies(
     year: str = "all",
     db: Session = Depends(get_db)
 ):
-    query = db.query(models.Movie)
+    # Start with a subquery to calculate average ratings
+    ratings_subquery = (
+        db.query(
+            models.Review.movie_id,
+            func.avg(models.Review.rating).label('average_rating'),
+            func.count(models.Review.id).label('review_count')
+        )
+        .group_by(models.Review.movie_id)
+        .subquery()
+    )
+
+    # Main query
+    query = (
+        db.query(
+            models.Movie,
+            ratings_subquery.c.average_rating,
+            ratings_subquery.c.review_count
+        )
+        .outerjoin(ratings_subquery, models.Movie.id == ratings_subquery.c.movie_id)
+    )
     
-    # Apply search filter
+    # Apply filters
     if search:
         query = query.filter(models.Movie.title.ilike(f"%{search}%"))
     
-    # Apply genre filter
     if genre and genre != "All Genres":
         query = query.join(models.Movie.genres).filter(models.Genre.name == genre)
     
-    # Apply year filter
     if year and year != "all":
         try:
             year_start = int(year)
@@ -169,18 +186,21 @@ async def get_movies(
                     models.Movie.year < year_start + 10
                 )
         except ValueError:
-            pass  # Handle invalid year values gracefully
+            pass
+
+    results = query.all()
     
-    movies = query.all()
     return [
         schemas.MovieResponse(
-            id=movie.id,
-            title=movie.title,
-            director=movie.director,
-            year=movie.year,
-            genres=[genre.name for genre in movie.genres]
+            id=movie.Movie.id,
+            title=movie.Movie.title,
+            director=movie.Movie.director,
+            year=movie.Movie.year,
+            genres=[genre.name for genre in movie.Movie.genres],
+            average_rating=round(float(movie.average_rating), 1) if movie.average_rating else None,
+            review_count=movie.review_count or 0
         )
-        for movie in movies
+        for movie in results
     ]
 
 @app.post("/reviews/{review_id}/like")
@@ -370,8 +390,30 @@ async def get_user_reviews(
     return reviews
 
 @app.get("/movie/{movie_id}")
-async def movie_details_page(request: Request, movie_id: int):
-    return templates.TemplateResponse("movie_details.html", {"request": request})
+async def get_movie(movie_id: int, request: Request, db: Session = Depends(get_db)):
+    movie = db.query(models.Movie).filter(models.Movie.id == movie_id).first()
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    
+    # Calculate average rating
+    rating_stats = (
+        db.query(
+            func.avg(models.Review.rating).label('average_rating'),
+            func.count(models.Review.id).label('review_count')
+        )
+        .filter(models.Review.movie_id == movie_id)
+        .first()
+    )
+    
+    return templates.TemplateResponse(
+        "movie_details.html",
+        {
+            "request": request,
+            "movie": movie,
+            "average_rating": round(float(rating_stats.average_rating), 1) if rating_stats.average_rating else None,
+            "review_count": rating_stats.review_count or 0
+        }
+    )
 
 @app.get("/api/movies/{movie_id}", response_model=schemas.MovieResponse)
 def get_movie_details(movie_id: int, db: Session = Depends(get_db)):

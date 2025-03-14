@@ -41,12 +41,11 @@ class Movie(MovieBase):
     class Config:
         from_attributes = True
 
-class MovieResponse(BaseModel):
+class MovieResponse(MovieBase):
     id: int
-    title: str
-    director: str
-    year: int
     genres: List[str]
+    average_rating: Optional[float] = None
+    review_count: int = 0
 
     class Config:
         from_attributes = True

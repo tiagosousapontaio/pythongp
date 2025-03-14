@@ -32,14 +32,32 @@ async function loadMovies(search = '', genre = 'All Genres', yearFilter = 'all')
             return;
         }
 
-        movieList.innerHTML = movies.map(movie => `
-            <div class="movie-card" onclick="window.location.href='/movie/${movie.id}'">
-                <h3>${movie.title}</h3>
-                <p>Director: ${movie.director}</p>
-                <p>Year: ${movie.year}</p>
-                <p>Genres: ${movie.genres.join(', ')}</p>
-            </div>
-        `).join('');
+        movieList.innerHTML = movies.map(movie => {
+            // Create rating display
+            let ratingDisplay;
+            if (movie.review_count === 0) {
+                ratingDisplay = '<span class="text-muted">No ratings yet</span>';
+            } else {
+                const stars = '★'.repeat(Math.round(movie.average_rating)) + 
+                             '☆'.repeat(5 - Math.round(movie.average_rating));
+                ratingDisplay = `
+                    <div class="rating">
+                        <span class="stars">${stars}</span>
+                        <span class="rating-text">
+                            ${movie.average_rating.toFixed(1)} (${movie.review_count} review${movie.review_count !== 1 ? 's' : ''})
+                        </span>
+                    </div>`;
+            }
+
+            return `
+                <div class="movie-card" onclick="window.location.href='/movie/${movie.id}'">
+                    <h3>${movie.title}</h3>
+                    <p>Director: ${movie.director}</p>
+                    <p>Year: ${movie.year}</p>
+                    <p>Genres: ${movie.genres.join(', ')}</p>
+                    ${ratingDisplay}
+                </div>`;
+        }).join('');
     } catch (error) {
         console.error('Error loading movies:', error);
         document.getElementById('movieList').innerHTML = 
