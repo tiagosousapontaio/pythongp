@@ -33,27 +33,28 @@
                 <div class="mb-3" id="movieGenres"></div>
                 <p class="lead" id="movieYear"></p>
                 
-                <div class="review-section">
-                    <h3>Add Your Review</h3>
-                    <form id="reviewForm">
-                        <div class="mb-3">
-                            <label for="rating" class="form-label">Rating (1-5)</label>
-                            <select name="rating" class="form-select" required>
-                                <option value="1">1 - Poor</option>
-                                <option value="2">2 - Fair</option>
-                                <option value="3">3 - Good</option>
-                                <option value="4">4 - Very Good</option>
-                                <option value="5">5 - Excellent</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="comment" class="form-label">Comment</label>
-                            <textarea name="comment" class="form-control" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit Review</button>
-                    </form>
-                    <div id="reviews" class="mt-4">
-                        <!-- Reviews will be loaded here -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Add Your Review</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="reviewForm">
+                            <div class="mb-3">
+                                <label for="rating" class="form-label">Rating (1-5)</label>
+                                <select name="rating" class="form-select" required>
+                                    <option value="1">1 - Poor</option>
+                                    <option value="2">2 - Fair</option>
+                                    <option value="3">3 - Good</option>
+                                    <option value="4">4 - Very Good</option>
+                                    <option value="5">5 - Excellent</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comment" class="form-label">Comment</label>
+                                <textarea name="comment" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                        </form>
                     </div>
                 </div>
             </div>

@@ -380,10 +380,11 @@ def create_review(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Print debug information
-    print(f"Creating review for movie {movie_id} by user {current_user.id}")
-    print(f"Review data: {review}")
+    # Validate rating
+    if not 1 <= review.rating <= 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
 
+    # Create review
     db_review = models.Review(
         rating=review.rating,
         comment=review.comment,
@@ -397,9 +398,8 @@ def create_review(
         db.refresh(db_review)
         return db_review
     except Exception as e:
-        print(f"Error creating review: {e}")
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Failed to create review")
 
 @app.get("/your-movies/list", response_model=List[schemas.MovieResponse])
 async def get_your_movies(

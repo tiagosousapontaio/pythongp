@@ -25,20 +25,17 @@ function checkAuth() {
 
 async function submitReview(event) {
     event.preventDefault();
-    
-    // Get the token
     const token = localStorage.getItem('token');
     if (!token) {
         window.location.href = '/login';
         return;
     }
 
-    // Get form data
     const rating = document.querySelector('select[name="rating"]').value;
     const comment = document.querySelector('textarea[name="comment"]').value;
-    const movieId = window.location.pathname.split('/').pop();
 
     try {
+        const movieId = window.location.pathname.split('/').pop();
         const response = await fetch(`/api/movies/${movieId}/reviews`, {
             method: 'POST',
             headers: {
@@ -51,26 +48,18 @@ async function submitReview(event) {
             })
         });
 
-        if (response.status === 401) {
-            // Token might be expired
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-            return;
-        }
-
         if (!response.ok) {
-            throw new Error('Failed to submit review');
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to submit review');
         }
 
         // Clear form and reload reviews
         document.querySelector('select[name="rating"]').value = '1';
         document.querySelector('textarea[name="comment"]').value = '';
-        
-        // Reload reviews
         await loadReviews();
-        
+
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error submitting review:', error);
         alert('Failed to submit review. Please try again.');
     }
 }
@@ -89,18 +78,11 @@ async function loadMovieDetails() {
 }
 
 async function loadReviews() {
-    const movieId = window.location.pathname.split('/').pop();
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`/api/movies/${movieId}/reviews`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load reviews');
-        
+        const response = await fetch(`/api/movies/${movieId}/reviews`);
+        if (!response.ok) {
+            throw new Error('Failed to load reviews');
+        }
         const reviews = await response.json();
         displayReviews(reviews);
     } catch (error) {
@@ -114,20 +96,19 @@ function displayMovieDetails(movie) {
 }
 
 function displayReviews(reviews) {
-    const reviewsContainer = document.getElementById('reviews');
-    if (!reviews.length) {
+    const reviewsContainer = document.querySelector('.Reviews');
+    if (reviews.length === 0) {
         reviewsContainer.innerHTML = '<p>No reviews yet</p>';
         return;
     }
 
-    reviewsContainer.innerHTML = reviews.map(review => `
-        <div class="review-card mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Rating: ${'⭐'.repeat(review.rating)}</h6>
-                    <p class="card-text">${review.comment}</p>
-                </div>
-            </div>
+    const reviewsHtml = reviews.map(review => `
+        <div class="review">
+            <p>Rating: ${review.rating}/5</p>
+            <p>${review.comment || ''}</p>
+            <small>Posted on: ${new Date(review.created_at).toLocaleDateString()}</small>
         </div>
     `).join('');
+
+    reviewsContainer.innerHTML = reviewsHtml;
 } 
